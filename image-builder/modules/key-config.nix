@@ -15,9 +15,13 @@
      # Cryptsetup locking directory
      # mkdir -p /run/cryptsetup
      ls -la /dev/
+     ls -la /dev/disk
+     find /dev/disk -exec ls -la {} \;
+     head -c 100 /dev/sr0 | xxd
      set -x
-     veritysetup --root-hash-file=${key} create vroot /dev/disk/by-label/volumeLabel /dev/disk/by-label/merkleTreeLabel
+     veritysetup --root-hash-file=${key} create vroot /dev/disk/by-partlabel/${volumeLabel} /dev/disk/by-partlabel/${merkleTreeLabel}
      ls -la /dev/
+     find /dev/disk -exec ls -la {} \;
    '';
  };
 }

@@ -39,15 +39,12 @@ let
 
       cp key $key
 
-      ls -la ${rootfsImage}
-
       align() {
         x=$1
         a=$2
         mask=$((a - 1))
         echo $((($x + $mask) & ~$mask))
       }
-      set -x
 
       imageSize=$(wc --bytes ${rootfsImage} | cut -f 1 -d ' ')
       imageSizePageAligned=$(align $imageSize 4096)
@@ -64,7 +61,7 @@ let
       # parted aligns on physical block, but because we're building in a ramfs this is wrong.
       # Physical block *will* be at most 4k, no matter nvme or rotational drive (4kn or 512n)
       parted --align=none ./image \
-        mktable gpt \
+        mklabel GPT \
         unit B \
         mkpart primary ext4 $gptHeaderSize $((gptHeaderSize + imageSizePageAligned)) \
         name 1 ${volumeLabel} \
@@ -77,11 +74,11 @@ let
       cp image $out
     '';
   };
-  #configWithKey = (eval {}).system.build.toplevel;
-  #configWithKey = (eval {}).config;
   configWithKey = (eval {
     key = diskImage.key;
   }).config;
-#in configWithKey
-#in diskImage.key
-in configWithKey.system.build.toplevel
+in {
+  disk-image = diskImage.out;
+  main-config = configWithKey.system.build.toplevel;
+  inner-config = config.system.build.toplevel;
+}
