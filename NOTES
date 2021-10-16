@@ -1,0 +1,1 @@
+echo "system_reset" | socat STDIO UNIX-CONNECT:./console.pipe

@@ -22,6 +22,11 @@ let
     compressImage = false;
     storePaths = [ config.system.build.toplevel ];
     inherit volumeLabel;
+    populateImageCommands = ''
+      mkdir -m 0755 files/proc files/sys files/dev files/run files/var files/etc files/usr files/bin files/nix files/nix/var files/home files/usr/bin
+      mkdir -m 01777 files/tmp
+      mkdir -m 0700 files/root
+    '';
   };
   diskImage = pkgs.stdenv.mkDerivation {
     name = "dm-verity-image";

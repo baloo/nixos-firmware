@@ -12,16 +12,15 @@
    '';
 
    boot.initrd.preLVMCommands = ''
-     # Cryptsetup locking directory
-     # mkdir -p /run/cryptsetup
-     ls -la /dev/
-     ls -la /dev/disk
-     find /dev/disk -exec ls -la {} \;
-     head -c 100 /dev/sr0 | xxd
-     set -x
      veritysetup --root-hash-file=${key} create vroot /dev/disk/by-partlabel/${volumeLabel} /dev/disk/by-partlabel/${merkleTreeLabel}
-     ls -la /dev/
-     find /dev/disk -exec ls -la {} \;
+   '';
+   boot.initrd.postMountCommands = ''
+     mount -t tmpfs none /mnt-root/etc
+     mount -t tmpfs none /mnt-root/var
+     mount -t tmpfs none /mnt-root/nix/var
+     mount -t tmpfs none /mnt-root/usr/bin
+     mount -t tmpfs none /mnt-root/bin
+     mount -t tmpfs none /mnt-root/tmp
    '';
  };
 }

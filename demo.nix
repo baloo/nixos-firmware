@@ -3,6 +3,8 @@ let
   pkgs = import <nixpkgs> {};
   configuration = { pkgs, ... }: {
     networking.hostName = "demo";
+    services.getty.autologinUser = "root";
+
     boot.initrd.verbose = true;
     boot.initrd.kernelModules = [
       "virtio" "virtio_pci" "virtio_ring" "virtio_net" "virtio_blk"
