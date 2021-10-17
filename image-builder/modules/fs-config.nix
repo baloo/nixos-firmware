@@ -1,4 +1,4 @@
-{ volumeLabel
+{ integrityLabel
 }:
 
 { ...
@@ -8,16 +8,10 @@
 
    fileSystems = {
      "/" = {
-       device = "/dev/disk/by-label/${volumeLabel}";
+       device = "/dev/disk/by-id/dm-name-${integrityLabel}";
        fsType = "ext4";
        options = [ "ro" ];
      };
    };
-
-   # todo: move that
-   boot.initrd.kernelModules = [
-      "dm_verity"
-   ];
-   nix.readOnlyStore = true;
  };
 }

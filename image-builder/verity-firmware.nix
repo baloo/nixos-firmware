@@ -3,21 +3,38 @@
 with lib;
 
 let
-  volumeLabel = "firmware";
-  merkleTreeLabel = "merkle-tree";
-  eval = { key ? null}: (import <nixpkgs/nixos/lib/eval-config.nix> {
+  integrityLabel = "firmware";
+  eval = { key ? null
+         , volumeLabel ? "dummy"
+         , merkleTreeLabel ? "dummy"
+  }: (import <nixpkgs/nixos/lib/eval-config.nix> {
     modules = [ configuration ];
     extraModules = [
       (import ./modules/fs-config.nix {
-        inherit volumeLabel;
+        inherit integrityLabel;
+      })
+      (import ./modules/readonly.nix {
+      })
+      (import ./modules/dm-verity.nix {
       })
     ] ++ optionals (key != null) [
       (import ./modules/key-config.nix {
-        inherit key volumeLabel merkleTreeLabel;
+        inherit key volumeLabel merkleTreeLabel integrityLabel;
       })
     ];
   });
-  config = (eval {}).config;
+
+  # Compute a unique name from the configuration itself
+  configName = (eval {}).config.system.build.toplevel.drvPath;
+  # this goes in partition labels, partition labels are 36 chars max.
+  # sha1 hexencoded would give us 40, we're using md5 instead, which yield 32chars.
+  volumeLabel = builtins.hashString "md5" (configName + "volume");
+  merkleTreeLabel = builtins.hashString "md5" (configName + "merkle-tree");
+
+  config = (eval {
+    inherit volumeLabel merkleTreeLabel;
+  }).config;
+
   rootfsImage = pkgs.callPackage <nixpkgs/nixos/lib/make-ext4-fs.nix> {
     compressImage = false;
     storePaths = [ config.system.build.toplevel ];
@@ -80,6 +97,7 @@ let
     '';
   };
   configWithKey = (eval {
+    inherit volumeLabel merkleTreeLabel;
     key = diskImage.key;
   }).config;
 in {

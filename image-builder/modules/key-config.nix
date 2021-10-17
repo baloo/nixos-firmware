@@ -1,6 +1,7 @@
 { key
 , volumeLabel
 , merkleTreeLabel
+, integrityLabel
 }:
 
 { pkgs
@@ -12,7 +13,7 @@
    '';
 
    boot.initrd.preLVMCommands = ''
-     veritysetup --root-hash-file=${key} create vroot /dev/disk/by-partlabel/${volumeLabel} /dev/disk/by-partlabel/${merkleTreeLabel}
+     veritysetup --root-hash-file=${key} create "${integrityLabel}" /dev/disk/by-partlabel/${volumeLabel} /dev/disk/by-partlabel/${merkleTreeLabel}
    '';
    boot.initrd.postMountCommands = ''
      mount -t tmpfs none /mnt-root/etc
@@ -21,6 +22,8 @@
      mount -t tmpfs none /mnt-root/usr/bin
      mount -t tmpfs none /mnt-root/bin
      mount -t tmpfs none /mnt-root/tmp
+
+     mkdir -p /mnt-root/nix/var/nix/gcroots/
    '';
  };
 }
