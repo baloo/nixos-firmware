@@ -4,10 +4,13 @@
 { lib
 , ...
 }: {
- config = {
-   system.activationScripts.nix = lib.mkForce "";
+  config = {
+    system.activationScripts.nix = lib.mkForce "";
 
-   nix.readOnlyStore = true;
- };
+    nix.readOnlyStore = true;
+
+    # dont run fsck
+    boot.initrd.checkJournalingFS = false;
+  };
 }
 
