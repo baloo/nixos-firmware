@@ -95,7 +95,7 @@ stdenv.mkDerivation rec {
   cargoProjectDeps = rustPlatform.fetchCargoTarball {
     inherit src;
     name = "${name}-${version}";
-    sha256 = "sha256-dNKH7p9JI47WiqNHH/HYkTrtv0VlyyolOX/nRGcbB/g=";
+    sha256 = "sha256-9F3XiynDfgCaqZ1HRLz6CvNqcDAdDXwJTJQtw6KDjQc=";
   };
   cargoProjectDepsUnpacked = stdenvNoCC.mkDerivation {
     name = cargoProjectDeps.name + "-unpacked";

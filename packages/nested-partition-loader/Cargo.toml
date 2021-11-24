@@ -1,3 +1,9 @@
+[workspace]
+members = [
+    ".",
+    "aligned",
+]
+
 [package]
 name = "nested-partition-loader"
 version = "0.1.0"
@@ -6,11 +12,20 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-uefi = { path = "uefi-rs", features = [ "exts", "logger" ] }
-uefi-services = { path = "uefi-rs/uefi-services" }
+aligned = { path = "aligned" }
 
+uefi-services = { git = "https://github.com/rust-osdev/uefi-rs", branch = "master" }
+uefi = { git = "https://github.com/rust-osdev/uefi-rs", branch = "master", features = [ "exts", "logger" ] }
+
+smallvec = "1.7.0"
 log = { version = "0.4.11", default-features = false }
+uuid = { version = "0.8.2", default-features = false }
+nom = { git = "https://github.com/Geal/nom.git", default-features = false }
+bootsector = { git = "https://github.com/baloo/bootsector.git", branch = "baloo/no_std-support/init", default-features = false }
 
 [patch.crates-io]
-uefi-macros = { path = "uefi-rs/uefi-macros" }
-uefi = { path = "uefi-rs" }
+# Because we're importing uefi from git, because it imports macro that imports uefi back.
+# need to override it back
+uefi = { git = "https://github.com/rust-osdev/uefi-rs", branch = "master", features = [ "exts", "logger" ] }
+uefi-macros = { git = "https://github.com/rust-osdev/uefi-rs", branch = "master" }
+uefi-services = { git = "https://github.com/rust-osdev/uefi-rs", branch = "master" }

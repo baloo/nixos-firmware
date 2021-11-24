@@ -13,22 +13,23 @@ use core::mem;
 use uefi::prelude::*;
 use uefi::table::boot::MemoryDescriptor;
 
+mod device;
+mod media;
+
 #[entry]
 fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     // Initialize utilities (logging, memory allocation...)
     uefi_services::init(&mut st).expect_success("Failed to initialize utilities");
 
-    // unit tests here
+    // Reset the console before running all the other tests.
+    st.stdout()
+        .reset(false)
+        .expect_success("Failed to reset stdout");
 
     // output firmware-vendor (CStr16 to Rust string)
     let mut buf = String::new();
     st.firmware_vendor().as_str_in_buf(&mut buf).unwrap();
     info!("Firmware Vendor: {}", buf.as_str());
-
-    // Reset the console before running all the other tests.
-    st.stdout()
-        .reset(false)
-        .expect_success("Failed to reset stdout");
 
     // Ensure the tests are run on a version of UEFI we support.
     check_revision(st.uefi_revision());
@@ -40,6 +41,9 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     bt.get_image_file_system(image)
         .expect("Failed to retrieve boot file system")
         .unwrap();
+
+    device::test(image, bt);
+    media::test(image, bt);
 
     shutdown(image, st);
 }
@@ -56,12 +60,8 @@ fn check_revision(rev: uefi::table::Revision) {
     );
 }
 
-
 fn shutdown(image: uefi::Handle, mut st: SystemTable<Boot>) -> ! {
     use uefi::table::runtime::ResetType;
-
-    // Get our text output back.
-    st.stdout().reset(false).unwrap_success();
 
     // Exit boot services as a proof that it works :)
     let max_mmap_size =

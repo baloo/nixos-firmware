@@ -3,6 +3,10 @@
 version = 3
 
 [[package]]
+name = "aligned"
+version = "0.1.0"
+
+[[package]]
 name = "bit_field"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -15,10 +19,34 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
+name = "bootsector"
+version = "0.1.6-alpha.0"
+source = "git+https://github.com/baloo/bootsector.git?branch=baloo/no_std-support/init#3e15287bb7d8e59b18926e313d48a792c3319a8a"
+dependencies = [
+ "crc",
+ "smallvec",
+]
+
+[[package]]
 name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
+
+[[package]]
+name = "crc"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "49fc9a695bca7f35f5f4c15cddc84415f66a74ea78eef08e90c5024f2b540e23"
+dependencies = [
+ "crc-catalog",
+]
+
+[[package]]
+name = "crc-catalog"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ccaeedb56da03b09f598226e25e80088cb4cd25f316e6e4df7d695f0feeb1403"
 
 [[package]]
 name = "log"
@@ -30,19 +58,46 @@ dependencies = [
 ]
 
 [[package]]
+name = "memchr"
+version = "2.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "308cc39be01b73d0d18f82a0e7b2a3df85245f84af96fdddc5d202d27e47b86a"
+
+[[package]]
+name = "minimal-lexical"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
+
+[[package]]
 name = "nested-partition-loader"
 version = "0.1.0"
 dependencies = [
+ "aligned",
+ "bootsector",
  "log",
+ "nom",
+ "smallvec",
  "uefi",
  "uefi-services",
+ "uuid",
+]
+
+[[package]]
+name = "nom"
+version = "7.1.0"
+source = "git+https://github.com/Geal/nom.git#b6f79c4d375ae55e1fd1a35032ebb47a52ea3389"
+dependencies = [
+ "memchr",
+ "minimal-lexical",
+ "version_check",
 ]
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.30"
+version = "1.0.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "edc3358ebc67bc8b7fa0c007f945b0b18226f78437d61bec735a9eb96b61ee70"
+checksum = "ba508cc11742c0dc5c1659771673afbab7a0efab23aa17e854cbab0837ed0b43"
 dependencies = [
  "unicode-xid",
 ]
@@ -57,10 +112,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "syn"
-version = "1.0.80"
+name = "smallvec"
+version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d010a1623fbd906d51d650a9916aaefc05ffa0e4053ff7fe601167f3e715d194"
+checksum = "1ecab6c735a6bb4139c0caafd0cc3635748bbb3acf4550e8138122099251f309"
+
+[[package]]
+name = "syn"
+version = "1.0.81"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2afee18b8beb5a596ecb4a2dce128c719b4ba399d34126b9e4396e3f9860966"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -79,6 +140,7 @@ dependencies = [
 [[package]]
 name = "uefi"
 version = "0.12.0"
+source = "git+https://github.com/rust-osdev/uefi-rs?branch=master#c1d4772590d5fadc0edeca3eddbb912542d297ec"
 dependencies = [
  "bitflags",
  "log",
@@ -89,6 +151,7 @@ dependencies = [
 [[package]]
 name = "uefi-macros"
 version = "0.4.0"
+source = "git+https://github.com/rust-osdev/uefi-rs?branch=master#c1d4772590d5fadc0edeca3eddbb912542d297ec"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -98,6 +161,7 @@ dependencies = [
 [[package]]
 name = "uefi-services"
 version = "0.9.0"
+source = "git+https://github.com/rust-osdev/uefi-rs?branch=master#c1d4772590d5fadc0edeca3eddbb912542d297ec"
 dependencies = [
  "cfg-if",
  "log",
@@ -109,3 +173,15 @@ name = "unicode-xid"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ccb82d61f80a663efe1f787a51b16b5a51e3314d6ac365b08639f52387b33f3"
+
+[[package]]
+name = "uuid"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bc5cf98d8186244414c848017f0e2676b3fcb46807f6668a97dfe67359a3c4b7"
+
+[[package]]
+name = "version_check"
+version = "0.9.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5fecdca9a5291cc2b8dcf7dc02453fee791a280f3743cb0905f8822ae463b3fe"
