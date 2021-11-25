@@ -1,7 +1,5 @@
 #![no_std]
 
-use core::ops::Rem;
-
 pub trait Aligned {
     fn aligned(&self, value: Self) -> Self;
 }
