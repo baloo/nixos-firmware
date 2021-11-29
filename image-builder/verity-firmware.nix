@@ -18,6 +18,10 @@ let
   integrityLabel = "firmware";
   kernelLabel = "kernel";
 
+  nested-partition-loader = import ../packages/nested-partition-loader {
+    #inherit pkgs;
+  };
+
   pecoff-checksum = import ../packages/pecoff-checksum {
     inherit (pkgs) python3Packages openssl lib stdenv;
   };
@@ -95,6 +99,28 @@ let
       params = config.boot.kernelParams;
       toplevel = config.system.build.toplevel;
     };
+
+  espPartitionImage = pkgs.stdenvNoCC.mkDerivation {
+    name = "nested-partition-loader-diskimage";
+
+    nativeBuildInputs = with pkgs; [
+      lkl
+      util-linux
+      dosfstools
+    ];
+
+    buildCommand = ''
+      set -eu
+
+      imageSize=$((20 * 1024 * 1024))
+
+      truncate -s $imageSize esp
+      mkfs.vfat esp
+      cptofs -i esp -t vfat ${nested-partition-loader}/bin/nested-partition-loader.efi /
+
+      cp esp $out
+    '';
+  };
 
   updateDiskImage = pkgs.stdenvNoCC.mkDerivation {
     name = "dm-verity-image";
@@ -210,6 +236,7 @@ let
           --partition-guid=3:${outerGuid.firmwareB} \
           ./image
 
+      dd if=${espPartitionImage} of=image seek=$((espOffset / 4096)) bs=4096 conv=notrunc
       dd if=${updateDiskImage} of=image seek=$((imageAOffset / 4096)) bs=4096 conv=notrunc
 
       cp image $out
