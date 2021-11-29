@@ -13,9 +13,7 @@ let
     # dont run fsck
     boot.initrd.checkJournalingFS = false;
   };
-  system-image = import image-builder/verity-firmware.nix {
-    inherit pkgs configuration;
-    inherit (pkgs) lib;
+  guids = {
     innerGuid = {
       btree = "cf102aaf-ef46-48bc-be47-54a3680da159";
       data = "00299141-a24e-4f28-b042-414fcf8349ad";
@@ -26,6 +24,11 @@ let
       firmwareA = "ed38b728-db62-4127-8962-9ef6ba2c78b0";
       firmwareB = "1902c57d-d578-4ecb-8294-40859c937d4e";
     };
+  };
+  system-image = import image-builder/verity-firmware.nix {
+    inherit pkgs configuration;
+    inherit (pkgs) lib;
+    inherit (guids) innerGuid outerGuid;
   };
 in pkgs.writeShellScript "run.sh" ''
   ${pkgs.qemu}/bin/qemu-system-x86_64 \
@@ -42,5 +45,5 @@ in pkgs.writeShellScript "run.sh" ''
     \
     -kernel ${system-image.main-config}/kernel \
     -initrd ${system-image.main-config}/initrd \
-    -append "console=ttyS0 root=LABEL=firmware init=${system-image.inner-config}/init"
+    -append "console=ttyS0 root=LABEL=firmware init=${system-image.inner-config}/init firmware.loaded=${guids.outerGuid.firmwareA}"
 ''
