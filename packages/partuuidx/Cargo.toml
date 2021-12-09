@@ -1,0 +1,20 @@
+[package]
+name = "partuuidx"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+# https://github.com/stratis-storage/devicemapper-rs/pull/727
+devicemapper = { git = "https://github.com/baloo/devicemapper-rs", branch = "baloo/linear-udev-trigger"}
+bootsector = "0.1.5"
+clap = "2"
+anyhow = "1.0"
+nix = "0.23"
+uuid = "0.8"
+
+[profile.release]
+lto = true
+opt-level = "s"

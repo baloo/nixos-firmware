@@ -5,6 +5,8 @@ let
     networking.hostName = "demo";
     services.getty.autologinUser = "root";
 
+    boot.kernelPackages = pkgs.linuxPackages_latest;
+
     boot.initrd.verbose = true;
     boot.initrd.kernelModules = [
       "virtio" "virtio_pci" "virtio_ring" "virtio_net" "virtio_blk"

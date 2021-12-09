@@ -26,6 +26,8 @@ let
     inherit (pkgs) python3Packages openssl lib stdenv;
   };
 
+  partuuidx = pkgs.callPackage ../packages/partuuidx {};
+
   eval = { key ? null
          , volumeLabel ? "dummy"
          , merkleTreeLabel ? "dummy"
@@ -41,7 +43,7 @@ let
       })
     ] ++ optionals (key != null) [
       (import ./modules/key-config.nix {
-        inherit key volumeLabel merkleTreeLabel integrityLabel;
+        inherit key volumeLabel merkleTreeLabel integrityLabel partuuidx innerGuid;
       })
     ];
   });
