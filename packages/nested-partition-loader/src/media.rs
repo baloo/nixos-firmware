@@ -260,6 +260,7 @@ pub fn test(image: Handle, bt: &BootServices) {
             kernel_size.copy_from_slice(&buf[..4]);
             let kernel_size = u32::from_le_bytes(kernel_size);
             let kernel_size_aligned = kernel_size.aligned(4096) as usize;
+            info!("kernel_size {}", kernel_size);
 
             assert!(
                 (kernel_size_aligned as u64) < kernel_partition.len,
@@ -286,6 +287,7 @@ pub fn test(image: Handle, bt: &BootServices) {
                 .expect_success("unable to allocate memory");
             let buf: &mut [u8] =
                 unsafe { core::slice::from_raw_parts_mut(buf, kernel_size_aligned) };
+            info!("kernel memory allocated");
 
             block_reader.read_exact(&mut buf[..]);
             let buf = &buf[..(kernel_size as usize)];
@@ -295,6 +297,7 @@ pub fn test(image: Handle, bt: &BootServices) {
             //    .expect_success("unable to read kernel");
 
             //assert!(read == size);
+            info!("kernel loaded");
 
             let linux_handle = bt
                 .load_image_from_buffer(image, &buf)
@@ -317,54 +320,4 @@ pub fn test(image: Handle, bt: &BootServices) {
             info!("returned?");
         });
     }
-
-    //info!("Testing Media Access protocols");
-
-    //if let Ok(sfs) = bt.locate_protocol::<SimpleFileSystem>() {
-    //    let sfs = sfs.expect("Cannot open `SimpleFileSystem` protocol");
-    //    let sfs = unsafe { &mut *sfs.get() };
-    //    let mut directory = sfs.open_volume().unwrap().unwrap();
-    //    let mut buffer = vec![0; 128];
-    //    loop {
-    //        let file_info = match directory.read_entry(&mut buffer) {
-    //            Ok(completion) => {
-    //                if let Some(info) = completion.unwrap() {
-    //                    info
-    //                } else {
-    //                    // We've reached the end of the directory
-    //                    break;
-    //                }
-    //            }
-    //            Err(error) => {
-    //                // Buffer is not big enough, allocate a bigger one and try again.
-    //                let min_size = error.data().unwrap();
-    //                buffer.resize(min_size, 0);
-    //                continue;
-    //            }
-    //        };
-    //        info!("Root directory entry: {:?}", file_info);
-    //    }
-    //    directory.reset_entry_readout().unwrap().unwrap();
-    //} else {
-    //    warn!("`SimpleFileSystem` protocol is not available");
-    //}
-
-    //let handles = bt
-    //    .find_handles::<PartitionInfo>()
-    //    .expect_success("Failed to get handles for `PartitionInfo` protocol");
-
-    //for handle in handles {
-    //    let pi = bt
-    //        .handle_protocol::<PartitionInfo>(handle)
-    //        .expect_success("Failed to get partition info");
-    //    let pi = unsafe { &*pi.get() };
-
-    //    if let Some(mbr) = pi.mbr_partition_record() {
-    //        info!("MBR partition: {:?}", mbr);
-    //    } else if let Some(gpt) = pi.gpt_partition_entry() {
-    //        info!("GPT partition: {:?}", gpt);
-    //    } else {
-    //        info!("Unknown partition");
-    //    }
-    //}
 }
