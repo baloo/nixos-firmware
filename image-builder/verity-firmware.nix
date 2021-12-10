@@ -67,6 +67,8 @@ let
       mkdir -m 0755 files/proc files/sys files/dev files/run files/var files/etc files/usr files/bin files/nix files/nix/var files/home files/usr/bin
       mkdir -m 01777 files/tmp
       mkdir -m 0700 files/root
+      # We cant pass init=/nix/store/.../init to the kernel parameters, so we'll just symlink from the disk
+      ln -s ${config.system.build.toplevel}/init files/init
     '';
   };
   merkleTree = pkgs.stdenv.mkDerivation {
@@ -80,6 +82,9 @@ let
     buildCommand = ''
       truncate --size=0 merkle-tree key
       veritysetup format --root-hash-file=key ${rootfsImage} merkle-tree
+      set -e
+      veritysetup verify --root-hash-file=key ${rootfsImage} merkle-tree
+      md5sum key merkle-tree ${rootfsImage}
 
       cp key $key
       cp merkle-tree $out
@@ -102,6 +107,32 @@ let
       toplevel = config.system.build.toplevel;
     };
 
+  bootentries = let
+    bootentry = { fname, desc, index }: pkgs.writeText fname ''
+      title ${desc}
+      efi /nested-partition-loader.efi
+      options boot-index=${index}
+    '';
+
+  in {
+    loader-conf = pkgs.writeText "loader.conf" ''
+      default firmwareA
+      timeout 2
+      editor no
+      console-mode max
+    '';
+    firmwareA = bootentry {
+      fname = "firmwareA.conf";
+      desc = "firmware A";
+      index = outerGuid.firmwareA;
+    };
+    firmwareB = bootentry {
+      fname = "firmwareB.conf";
+      desc = "firmware B";
+      index = outerGuid.firmwareB;
+    };
+  };
+
   espPartitionImage = pkgs.stdenvNoCC.mkDerivation {
     name = "nested-partition-loader-diskimage";
 
@@ -118,7 +149,21 @@ let
 
       truncate -s $imageSize esp
       mkfs.vfat esp
-      cptofs -i esp -t vfat ${nested-partition-loader}/bin/nested-partition-loader.efi /
+      mkdir root \
+            root/EFI \
+            root/EFI/BOOT \
+            root/loader \
+            root/loader/entries
+
+      echo "\EFI\BOOT\BOOTX64.EFI" > root/startup.nsh
+      cp ${bootentries.loader-conf}                                 root/loader/loader.conf
+      cp ${bootentries.firmwareA}                                   root/loader/entries/firmwareA.conf
+      cp ${bootentries.firmwareB}                                   root/loader/entries/firmwareB.conf
+      cp ${pkgs.systemd}/lib/systemd/boot/efi/systemd-bootx64.efi   root/EFI/BOOT/BOOTX64.EFI
+      cp ${nested-partition-loader}/bin/nested-partition-loader.efi root/
+      cptofs -i esp -t vfat root/* /
+
+      #cptofs -i esp -t vfat ${nested-partition-loader}/bin/nested-partition-loader.efi \
 
       cp esp $out
     '';
@@ -131,6 +176,7 @@ let
       parted
       util-linux
       gptfdisk
+      python3Minimal
     ];
 
     buildCommand = ''
@@ -142,9 +188,12 @@ let
         mask=$((a - 1))
         echo $((($x + $mask) & ~$mask))
       }
+      set -x
 
       kernel="${efiKernelImageMake configWithKey}/linux.efi"
-      kernelSize=$(wc --bytes $kernel | cut -f 1 -d ' ')
+      kernelSizeOrig=$(wc --bytes $kernel | cut -f 1 -d ' ')
+      # Store metadata as header
+      kernelSize=$((kernelSizeOrig + 4096))
       kernelSizePageAligned=$(align $kernelSize 4096)
       imageSize=$(wc --bytes ${rootfsImage} | cut -f 1 -d ' ')
       imageSizePageAligned=$(align $imageSize 4096)
@@ -154,8 +203,9 @@ let
       # In GPT the first usable sector is LBA 34, but it's not 4k page aligned. This would be LBA 36
       gptHeaderSize=$(align $((34 * 512)) 4096)
 
-      kernelOffset=$gptHeaderSize
-      imageOffset=$((kernelOffset + kernelSizePageAligned))
+      kernelMetaOffset=$((gptHeaderSize))
+      kernelOffset=$((kernelMetaOffset + 4096))
+      imageOffset=$((kernelMetaOffset + kernelSizePageAligned))
       mTreeOffset=$((imageOffset + imageSizePageAligned))
 
       # Because GPT uses a head and tail header (tail is a backup iirc), we have to provide that twice.
@@ -166,7 +216,7 @@ let
       parted --align=none ./image \
         mklabel GPT \
         unit B \
-        mkpart primary linux-swap $kernelOffset $((kernelOffset + kernelSizePageAligned - 1)) \
+        mkpart primary linux-swap $kernelMetaOffset $((kernelMetaOffset + kernelSizePageAligned - 1)) \
         name 1 ${kernelLabel} \
         mkpart primary ext4 $imageOffset $((imageOffset + imageSizePageAligned - 1)) \
         name 2 ${volumeLabel} \
@@ -177,12 +227,17 @@ let
       sgdisk \
           --partition-guid=1:${innerGuid.kernel} \
           --partition-guid=2:${innerGuid.data} \
-          --partition-guid=3:${innerGuid.btree} \
+          --partition-guid=3:${innerGuid.mtree} \
           ./image
 
+      # write kernel size in the sector before the kernel
+      set -x
+      python -c "import struct; import sys; sys.stdout.buffer.write(struct.pack('<i', int(sys.argv[1])))" $kernelSizeOrig > meta
+      dd if=meta of=image seek=$((kernelMetaOffset / 4096)) bs=4096 conv=notrunc
       dd if=$kernel of=image seek=$((kernelOffset / 4096)) bs=4096 conv=notrunc
       dd if=${rootfsImage} of=image seek=$((imageOffset / 4096)) bs=4096 conv=notrunc
       dd if=${merkleTree}  of=image seek=$((mTreeOffset / 4096)) bs=4096 conv=notrunc
+      set +x
       cp image $out
     '';
   };
@@ -224,7 +279,7 @@ let
         mklabel GPT \
         unit B \
         mkpart primary fat32 $espOffset $((espOffset + espSize-1)) \
-        name 1 entry \
+        name 1 boot \
         set 1 esp on \
         mkpart primary ext4 $imageAOffset $((imageAOffset + imageSize - 1)) \
         name 2 firmware-A \

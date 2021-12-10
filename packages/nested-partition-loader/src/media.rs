@@ -190,12 +190,12 @@ pub fn test(image: Handle, bt: &BootServices) {
     let options = Options::parse_options(options).expect("parse options");
     info!("loaded image options: {:?}", options);
 
-    let uuid = if let Options::BootIndex(options) = options[0] {
+    let firmware_uuid = if let Options::BootIndex(options) = options[0] {
         options
     } else {
         todo!();
     };
-    let uuid = uuid.as_fields();
+    let uuid = firmware_uuid.as_fields();
     let clock_seq_and_variant = u16::from_be_bytes([uuid.3[0], uuid.3[1]]);
     let node = u64::from_be_bytes([
         0, 0, uuid.3[2], uuid.3[3], uuid.3[4], uuid.3[5], uuid.3[6], uuid.3[7],
@@ -305,7 +305,9 @@ pub fn test(image: Handle, bt: &BootServices) {
                 .expect_success("lookup linux image");
             let linux_image = unsafe { &mut *linux_image.get() };
 
-            let options = CString16::try_from("console=ttyS0 panic=1").unwrap();
+            let options = format!("console=ttyS0 panic=1 firmware.loaded={}", firmware_uuid);
+
+            let options = CString16::try_from(options.as_str()).unwrap();
             let options = options.deref();
 
             unsafe { linux_image.set_load_options(options.as_ptr(), options.num_bytes() as u32) };

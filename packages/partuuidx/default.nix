@@ -13,6 +13,6 @@ rustPlatform.buildRustPackage rec {
   LIBCLANG_PATH = "${llvmPackages.libclang.lib}/lib";
   BINDGEN_EXTRA_CLANG_ARGS = "-I${linuxHeaders}/include";
 
-  cargoHash = "sha256-ClushISa8L4V1DYDOKs8NDfWJGYV7gdikugL3zArkuU=";
+  cargoHash = "sha256-caS9Yq/27rwGnK7I807jnb6pB7IC55iqvBUJPIBtfao=";
   cargoDepsName = pname;
 }

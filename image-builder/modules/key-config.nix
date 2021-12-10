@@ -25,7 +25,12 @@
                  ;;
          esac
      done
-     veritysetup --root-hash-file=${key} create "${integrityLabel}" /dev/disk/by-id/dm-uuid-${innerGuid.data} /dev/disk/by-id/dm-uuid-${innerGuid.btree}
+     md5sum ${key}
+     md5sum /dev/disk/by-partuuid/${innerGuid.data} /dev/disk/by-partuuid/${innerGuid.mtree}
+     [ -e /dev/disk/by-id/dm-uuid-${innerGuid.data} ] && veritysetup --root-hash-file=${key} create "${integrityLabel}" /dev/disk/by-id/dm-uuid-${innerGuid.data} /dev/disk/by-id/dm-uuid-${innerGuid.mtree}
+     [ -e /dev/disk/by-partuuid/${innerGuid.data} ] && veritysetup --root-hash-file=${key} create "${integrityLabel}" /dev/disk/by-partuuid/${innerGuid.data} /dev/disk/by-partuuid/${innerGuid.mtree}
+     find /dev/disk
+     set +x
    '';
    boot.initrd.postMountCommands = ''
      mount -t tmpfs none /mnt-root/etc
