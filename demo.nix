@@ -14,6 +14,10 @@ let
 
     # dont run fsck
     boot.initrd.checkJournalingFS = false;
+
+    environment.systemPackages = with pkgs; [
+      tpm2-tools
+    ];
   };
   guids = {
     innerGuid = {
