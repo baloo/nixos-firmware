@@ -15,6 +15,7 @@
    '';
 
    boot.initrd.preLVMCommands = ''
+     set -x
      for o in $(cat /proc/cmdline); do
          case $o in
              firmware.loaded=*)

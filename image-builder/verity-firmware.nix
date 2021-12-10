@@ -116,7 +116,7 @@ let
 
   in {
     loader-conf = pkgs.writeText "loader.conf" ''
-      default firmwareA
+      default firmwareA.conf
       timeout 2
       editor no
       console-mode max
