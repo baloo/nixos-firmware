@@ -306,15 +306,16 @@ If we have TPM support, we could start encrypting the firmware image and unlocki
 the encryption key by making sure a trusted kernel image has been loaded.
 This would ensure IP does not leak.
 
-### Recovery image
+### Recovery image (clean image)
 
-Instead of a A/B system, we could have an A/B/Recovery layout, with a smaller firmware
-for the recovery. This could be the image written by CCI. And recovery image does not
-need to carry IP, and does not need to be encrypted.
+Instead of an A/B system, we could have an A/B/Recovery layout, with a smaller
+firmware for the recovery. Recovery could be the image written by CCI. And recovery
+image does not need to carry IP, and does not need to be encrypted.
 
-### Disk encryption
+### Data encryption
 
 TPM could be used as root device for disk encryption of appliance data.
+Kernel/initramfs needs to provide the disk with the encryption key on boot.
 
 Note: it would probably require hardware-encryption capable disks (same model
 but different SKU than the disks we currently use in production).
@@ -324,9 +325,9 @@ but different SKU than the disks we currently use in production).
 TPMs provides a way to do remote attestation of systems. This could be used to
 have appliances authenticate to SSIP.
 
-This requires two keys of the TPM, attestation key and endorsement key, those
-two keys need to be bound together with a rather convoluted challenge-response
-mechanism.
+This requires two keys of the TPM, Attestation Key (AK) and Endorsement Key (EK),
+those two keys need to be bound together with a rather convoluted
+challenge-response mechanism.
 
 ### Remote attestation TOFU
 
@@ -337,8 +338,8 @@ another key, only they have access to).
 ### Multiple signatures with build reproducibility
 
 If we get the firmware fully build-reproducible, we can ship firmware with two
-signatures provided by two independant build chains. Should those build be
-controlled by diferrent teams, this should offer some resistance to supply chain
-tempering and would benefit auditability of our firmware images.
+signatures provided by two independant build chains. This should offer some
+resistance to supply chain tempering and would benefit auditability of our
+firmware images.
 
 This multi signature check can be implemented in the rust shim.
