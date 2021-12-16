@@ -343,7 +343,7 @@ another key, only they have access to).
 ### Multiple signatures with build reproducibility
 
 If we get the firmware fully build-reproducible, we can ship firmware with two
-signatures provided by two independant build chains. This should offer some
+signatures provided by two independent build chains. This should offer some
 resistance to supply chain tempering and would benefit auditability of our
 firmware images.
 
