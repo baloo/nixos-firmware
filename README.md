@@ -2,13 +2,14 @@
 
 ## Design principles
 
- - This is based off the A/B system updates (the same we find in android or upgrade).
-   The purpose of this is to reduce the probability of losing a device after an update.
+ - This is based off the A/B system updates (the same we find in android or ChromeOS).
+   The purpose of this is to reduce the probability of losing a device after an upgrade.
  - A/B (flip-flop) firmwares works by having two full system images at the same time on
    an appliance. When a firmware is running (and activated), we can safely rewrite the
    other firmware.
    Once the firmware is written, we can verify it correctly applied on the disk
-   (checksum), then ask the bootloader to boot on this new firmware **on the next boot**.
+   (checksum), then ask the bootloader to boot on this new firmware **on the next boot
+   only**.
    Should the firmware load fail, the bootloader will then revert to the previous
    firmware.
  - By making firmwares on disk read-only, we also ensure we can not corrupt a filesystem
@@ -50,22 +51,22 @@ readonly filesystem image includes the `/nix/store` using the `make-ext4-fs.nix`
 nixpkgs[^make-ext4-fs].
 [^make-ext4-fs]: https://github.com/NixOS/nixpkgs/blob/master/nixos/lib/make-ext4-fs.nix
 
-Once this filesystem image is build, we'll build the merkle tree, and include the
-`root-hash` in the initramfs.
+Once this filesystem image is built, we'll build the dm-verity merkle tree, and include
+its `root-hash` in the initramfs.
 
-The kernel and initramfs are bundled together using the systemd efi stub. This builds
-an efi image.
+The kernel and initramfs are bundled together using the systemd efi stub
+(`packages/efi-kernel-make/`). This builds an efi image.
 This efi image can then be signed. By checking signature on the efi image, we check:
  - the kernel
- - the initramfs
-   - the root hash of the merkle tree
-     - the content of the merkle tree
-       - the content of the filesystem image
-         - `/nix/store`
+ - the initramfs bundles:
+   - the root hash of the merkle tree checks:
+     - the content of the merkle tree checks:
+       - the content of the filesystem image includes:
+         - `/nix/store` content
 
 ## Full disk image
 
-As layed out in the design principle, this is based off A/B system updates.
+As laid out in the design principle, this is based off A/B system updates.
 
 So essentially this will look like:
 ```
@@ -115,6 +116,7 @@ This means, that the full picture will look like:
    |   support    |
    |    (ESP)     |
    +--------------+
+   |  firmware A  |
    |/------------\|
    || partition  ||
    ||   table    ||
@@ -139,19 +141,28 @@ This means, that the full picture will look like:
    | (tail space) |
    |              |
    +--------------+
+   |  firmware B  |
+   |     ...      |
+   +--------------+
    |     ...      |
 ```
 
 Nested partition is not standard. And because the firmware brings its kernel (as
-efi image) to be loaded, we need a small adapter (living in the boot support
-partition), to load read the nested partition table, and load the kernel from
-there.
+efi image) to be loaded, we need a small shim (living in the boot support
+partition) to read the nested partition table, and load the kernel from
+the nested partition.
 
 This is implemented via a Rust bootloader compiled to EFI
-(`packages/nestest-partition-loader`).
+(`packages/nestest-partition-loader`). Rust bootloader will consume UEFI
+bootservices[^bootservices] to read the content of the partition table, and will
+then load kernel in memory and pass that to the bootservices for the firmware to
+jump on the kernel.
+Should the load of the kernel fail, this returns and goes back to the systemd
+bootloader (which then selects the next boot entry).
 
 Systemd's bootloader is the selected bootloaded, and it includes two entries for
-the two firmwares. Entries looks like:
+the two firmwares. This is what is loaded by UEFI firmware (it lives in
+`esp/EFI/BOOT/BOOTX64.EFI`). Entries looks like:
 ```
 title firmware A
 efi /nested-partition-loader.efi
@@ -160,7 +171,7 @@ options boot-index=ed38b728-db62-4127-8962-9ef6ba2c78b0
 (note: `ed38b728-db62-4127-8962-9ef6ba2c78b0` is the partition GUID for firmware A)
 
 systemd bootloader supports a couple features like boot selection (default boot,
-next boot) via EFI variables (`bootctl status`).
+next boot) via EFI variables (readable/writable via `bootctl status`).
 
 ### Customization
 
@@ -302,3 +313,12 @@ mechanism.
 We'd need to store all appliances endorsement keys to make sure those are the
 one we shipped. This could be done either on TOFU or at CCI during staging (with
 another key, only they have access to).
+
+### Multiple signatures with build reproducibility
+
+If we get the firmware fully build-reproducible, we can ship firmware with two
+signatures provided by two independant build chains. Should those build be
+controlled by diferrent teams, this should offer some resistance to supply chain
+tempering and would benefit auditability of our firmware images.
+
+This multi signature check can be implemented in the rust shim.
