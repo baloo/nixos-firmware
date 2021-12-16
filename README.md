@@ -160,15 +160,19 @@ jump on the kernel.
 Should the load of the kernel fail, this returns and goes back to the systemd
 bootloader (which then selects the next boot entry).
 
+[^bootservices]: https://uefi.org/sites/default/files/resources/UEFI_Spec_2_9_2021_03_18.pdf page 143
+
 Systemd's bootloader is the selected bootloaded, and it includes two entries for
 the two firmwares. This is what is loaded by UEFI firmware (it lives in
-`esp/EFI/BOOT/BOOTX64.EFI`). Entries looks like:
+`esp/EFI/BOOT/BOOTX64.EFI`[^bootx64]). Entries looks like:
 ```
 title firmware A
 efi /nested-partition-loader.efi
 options boot-index=ed38b728-db62-4127-8962-9ef6ba2c78b0
 ```
 (note: `ed38b728-db62-4127-8962-9ef6ba2c78b0` is the partition GUID for firmware A)
+
+[^bootx64]: https://uefi.org/sites/default/files/resources/UEFI_Spec_2_9_2021_03_18.pdf Table 3-2 UEFI Image Types page 89
 
 systemd bootloader supports a couple features like boot selection (default boot,
 next boot) via EFI variables (readable/writable via `bootctl status`).
@@ -208,7 +212,9 @@ activated on boot with `/nix/store/.../bin/activate`.
 
 We could use one of the accessory partition to store local modifications to the `/nix/store`
 because the firmware `/nix/store` and this additional content should not overlap, we
-can mix them with an overlayfs mount.
+can mix them with an overlayfs[^overlayfs] mount.
+
+[^overlayfs]: https://www.kernel.org/doc/html/latest/filesystems/overlayfs.html
 
 ```
 mkfs.ext4 /dev/vda4
@@ -270,6 +276,20 @@ should include 3 items (and only those):
     UnicodeName: PK
     VariableData: [...]
 [...]
+```
+ - A cap
+```
+- EventNum: 15
+  PCRIndex: 7
+  EventType: EV_SEPARATOR
+  DigestCount: 2
+  Digests:
+  - AlgorithmId: sha1
+    Digest: "9069ca78e7450a285173431b3e52c5c25299e473"
+  - AlgorithmId: sha256
+    Digest: "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119"
+  EventSize: 4
+  Event: "00000000"
 ```
 
 Relying on PCR7 to lock secrets is effective (this is how microsoft locks disk
