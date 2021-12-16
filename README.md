@@ -2,7 +2,8 @@
 
 ## Design principles
 
- - This is based off the A/B system updates (the same we find in android or ChromeOS).
+ - This is based off the A/B system updates (the same we find in android[^android] 
+   or ChromeOS[^chromeos]).
    The purpose of this is to reduce the probability of losing a device after an upgrade.
  - A/B (flip-flop) firmwares works by having two full system images at the same time on
    an appliance. When a firmware is running (and activated), we can safely rewrite the
@@ -15,13 +16,17 @@
  - By making firmwares on disk read-only, we also ensure we can not corrupt a filesystem
    (a disk block is either written or not) we only flip the bootloader configuration
    once the firmware is completely written and verified.
- - The firmware should be immutable and check for corruption. By relying on dm-verity
-   (https://www.kernel.org/doc/html/latest/admin-guide/device-mapper/verity.html), we
-   can check, on block read, that the data has not been tampered with.
+ - The firmware should be immutable and check for corruption. By relying on
+   dm-verity[^dm-verity], we can check, on block read, that the data has not been
+   tampered with.
+
+[^android]: https://source.android.com/devices/tech/ota/ab/
+[^chromeos]: https://www.chromium.org/chromium-os/chromiumos-design-docs/disk-format#TOC-Google-Chrome-OS-devices
+[^dm-verity]: https://www.kernel.org/doc/html/latest/admin-guide/device-mapper/verity.html
 
 ## Single firmware image
 
-This is the image of a single update, to be place in the slot A or slot B of the disk.
+This is the image of a single update, to be placed in the slot A or slot B of the disk.
 
 The firmware topology looks like:
 ```
